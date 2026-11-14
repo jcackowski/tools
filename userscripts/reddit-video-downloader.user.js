@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Video Downloader
 // @namespace    reddit-video-downloader
-// @version      0.2.0
+// @version      0.3.0
 // @description  One-click download of Reddit-hosted (v.redd.it) videos, with sound, on old and new Reddit layouts.
 // @match        https://old.reddit.com/*
 // @match        https://www.reddit.com/*
@@ -9,6 +9,8 @@
 // @connect      packaged-media.redd.it
 // @grant        GM_xmlhttpRequest
 // @license      MIT
+// @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/reddit-video-downloader.user.js
+// @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/reddit-video-downloader.user.js
 // ==/UserScript==
 
 /*
@@ -140,11 +142,54 @@
         button.setAttribute('aria-disabled', String(state === 'busy'));
     };
 
+    // Inline !important declarations outrank every stylesheet rule, including
+    // !important ones, so Reddit or RES themes can't restyle the button.
+    const LOCKED_BUTTON_STYLE = {
+        'box-sizing': 'border-box',
+        position: 'relative',
+        display: 'inline-flex',
+        'align-items': 'center',
+        gap: '4px',
+        width: 'auto',
+        'min-width': '0',
+        height: '18px',
+        'min-height': '18px',
+        'max-height': '18px',
+        margin: '0',
+        padding: '0 6px',
+        'vertical-align': 'middle',
+        border: '1px solid currentColor',
+        'border-radius': '999px',
+        'background-image': 'none',
+        'box-shadow': 'none',
+        'text-shadow': 'none',
+        appearance: 'none',
+        color: 'inherit',
+        'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        'font-size': '11px',
+        'font-style': 'normal',
+        'font-weight': '600',
+        'line-height': '1',
+        'letter-spacing': 'normal',
+        'text-transform': 'none',
+        'white-space': 'nowrap',
+        cursor: 'pointer',
+    };
+    const LOCKED_ICON_STYLE = { width: '10px', height: '10px', 'flex-shrink': '0', margin: '0' };
+
+    const lockStyle = (element, declarations) => {
+        for (const [property, value] of Object.entries(declarations)) {
+            element.style.setProperty(property, value, 'important');
+        }
+    };
+
     const createButton = (info) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = BUTTON_CLASS;
         button.innerHTML = `${ICON}<span class="rvd-label"></span><span class="rvd-sr-only"></span>`;
+        lockStyle(button, LOCKED_BUTTON_STYLE);
+        lockStyle(button.querySelector('svg'), LOCKED_ICON_STYLE);
         button.querySelector('.rvd-sr-only').textContent = `: ${info.title}`;
         setButtonState(button, 'idle', 'Download video');
         return button;
@@ -234,7 +279,7 @@
             if (!info.postId) continue;
 
             const button = createButton(info);
-            button.classList.add('rvd-below-video');
+            button.style.setProperty('margin-top', '8px', 'important');
             onActivate(button, info, async (forceFetch) => {
                 const onPage = forceFetch ? null : findPackagedMp4(post, info.postId);
                 if (onPage) return { url: onPage, fromPage: true };
@@ -252,18 +297,15 @@
             position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
-        /* Positioned so it paints above the card's full-post link overlay in new-layout feeds. */
-        .${BUTTON_CLASS} {
-            position: relative; display: inline-flex; align-items: center; gap: 4px;
-            min-height: 32px; padding: 0 12px; vertical-align: middle;
-            border: 1px solid currentColor; border-radius: 999px;
-            background: transparent; color: inherit; cursor: pointer;
-            font-family: inherit; font-size: 14px; font-weight: 600; line-height: normal;
-        }
-        .${BUTTON_CLASS}:hover { background: rgba(128, 128, 128, 0.15); }
-        .${BUTTON_CLASS}[aria-disabled="true"] { cursor: progress; }
-        .${BUTTON_CLASS}:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-        .${BUTTON_CLASS}.rvd-below-video { margin-top: 8px; }
+        /* Fixed styles are set inline (see LOCKED_BUTTON_STYLE); only state styles live here.
+           position: relative (inline) also lifts the button above the full-post link
+           overlay on new-layout feed cards. */
+        button.${BUTTON_CLASS}.${BUTTON_CLASS} { background-color: transparent !important; }
+        button.${BUTTON_CLASS}.${BUTTON_CLASS}:hover { background-color: rgba(128, 128, 128, 0.15) !important; }
+        button.${BUTTON_CLASS}.${BUTTON_CLASS}[aria-disabled="true"] { cursor: progress !important; }
+        button.${BUTTON_CLASS}.${BUTTON_CLASS}:focus-visible { outline: 2px solid currentColor !important; outline-offset: 2px !important; }
+        /* Extends the click target to 24px tall (WCAG 2.2 AA target size) without changing the look. */
+        button.${BUTTON_CLASS}.${BUTTON_CLASS}::before { content: ""; position: absolute; inset: -4px 0; }
     `;
     document.head.append(style);
 
