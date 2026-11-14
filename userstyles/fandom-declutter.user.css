@@ -1,0 +1,51 @@
+/* ==UserStyle==
+@name           Fandom Declutter
+@namespace      github.com/jcackowski/userscripts
+@version        1.1.0
+@description    Hides ads, the featured video, and Fandom UI unrelated to the page's subject.
+@author         Jay Cackowski
+@homepageURL    https://github.com/jcackowski/userscripts
+@supportURL     https://github.com/jcackowski/userscripts/issues
+@license        MIT
+@updateURL      https://raw.githubusercontent.com/jcackowski/userscripts/main/userstyles/fandom-declutter.user.css
+==/UserStyle== */
+@-moz-document domain("fandom.com") {
+    /* Reclaim the space reserved for the hidden left nav (drives .main-container margin/width and the floating TOC position) */
+    :root {
+        --left-panel-spacing: 0px !important;
+    }
+
+    /* Site-wide navigation and notifications */
+    .global-explore-navigation,
+    #community-navigation,
+    .notifications-placeholder {
+        display: none !important;
+    }
+
+    /* Ad slots: top banner, in-content, right rail, above footer */
+    .top_leaderboard-odyssey-wrapper,
+    .fandom-ad-wrapper,
+    [data-rail-region="top-ad"],
+    [data-key="advertisement"] {
+        display: none !important;
+    }
+
+    /* Featured (sponsored) video player and its reserved space */
+    [itemprop="video"]:has(.featured-video-player-container),
+    cnx {
+        display: none !important;
+    }
+
+    /* Right rail: Discord widget and logged-out sign-up prompt */
+    .page__right-rail .DiscordIntegratorModule,
+    [data-rail-region="widget-summaries"]:has(.auth-right-rail) {
+        display: none !important;
+    }
+
+    /* Below the article: "More Fandoms" links, discussions, Fandom footer */
+    #mw-data-after-content > [class*="trfc-"],
+    #article-discussions,
+    .global-footer {
+        display: none !important;
+    }
+}
