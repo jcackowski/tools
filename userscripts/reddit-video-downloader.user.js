@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Video Downloader
 // @namespace    reddit-video-downloader
-// @version      0.3.0
+// @version      0.4.0
 // @description  One-click download of Reddit-hosted (v.redd.it) videos, with sound, on old and new Reddit layouts.
 // @match        https://old.reddit.com/*
 // @match        https://www.reddit.com/*
@@ -34,6 +34,8 @@
     'use strict';
 
     const BUTTON_CLASS = 'rvd-download';
+    const BUTTON = `button.${BUTTON_CLASS}.${BUTTON_CLASS}:not(#rvd-a):not(#rvd-b)`;
+    const DARK_THEME_GREEN = '#7ee787';
 
     // ---------------------------------------------------------------- network
 
@@ -142,54 +144,11 @@
         button.setAttribute('aria-disabled', String(state === 'busy'));
     };
 
-    // Inline !important declarations outrank every stylesheet rule, including
-    // !important ones, so Reddit or RES themes can't restyle the button.
-    const LOCKED_BUTTON_STYLE = {
-        'box-sizing': 'border-box',
-        position: 'relative',
-        display: 'inline-flex',
-        'align-items': 'center',
-        gap: '4px',
-        width: 'auto',
-        'min-width': '0',
-        height: '18px',
-        'min-height': '18px',
-        'max-height': '18px',
-        margin: '0',
-        padding: '0 6px',
-        'vertical-align': 'middle',
-        border: '1px solid currentColor',
-        'border-radius': '999px',
-        'background-image': 'none',
-        'box-shadow': 'none',
-        'text-shadow': 'none',
-        appearance: 'none',
-        color: 'inherit',
-        'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-        'font-size': '11px',
-        'font-style': 'normal',
-        'font-weight': '600',
-        'line-height': '1',
-        'letter-spacing': 'normal',
-        'text-transform': 'none',
-        'white-space': 'nowrap',
-        cursor: 'pointer',
-    };
-    const LOCKED_ICON_STYLE = { width: '10px', height: '10px', 'flex-shrink': '0', margin: '0' };
-
-    const lockStyle = (element, declarations) => {
-        for (const [property, value] of Object.entries(declarations)) {
-            element.style.setProperty(property, value, 'important');
-        }
-    };
-
     const createButton = (info) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = BUTTON_CLASS;
         button.innerHTML = `${ICON}<span class="rvd-label"></span><span class="rvd-sr-only"></span>`;
-        lockStyle(button, LOCKED_BUTTON_STYLE);
-        lockStyle(button.querySelector('svg'), LOCKED_ICON_STYLE);
         button.querySelector('.rvd-sr-only').textContent = `: ${info.title}`;
         setButtonState(button, 'idle', 'Download video');
         return button;
@@ -279,7 +238,7 @@
             if (!info.postId) continue;
 
             const button = createButton(info);
-            button.style.setProperty('margin-top', '8px', 'important');
+            button.classList.add('rvd-below-video');
             onActivate(button, info, async (forceFetch) => {
                 const onPage = forceFetch ? null : findPackagedMp4(post, info.postId);
                 if (onPage) return { url: onPage, fromPage: true };
@@ -297,17 +256,57 @@
             position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
-        /* Fixed styles are set inline (see LOCKED_BUTTON_STYLE); only state styles live here.
-           position: relative (inline) also lifts the button above the full-post link
-           overlay on new-layout feed cards. */
-        button.${BUTTON_CLASS}.${BUTTON_CLASS} { background-color: transparent !important; }
-        button.${BUTTON_CLASS}.${BUTTON_CLASS}:hover { background-color: rgba(128, 128, 128, 0.15) !important; }
-        button.${BUTTON_CLASS}.${BUTTON_CLASS}[aria-disabled="true"] { cursor: progress !important; }
-        button.${BUTTON_CLASS}.${BUTTON_CLASS}:focus-visible { outline: 2px solid currentColor !important; outline-offset: 2px !important; }
-        /* Extends the click target to 24px tall (WCAG 2.2 AA target size) without changing the look. */
-        button.${BUTTON_CLASS}.${BUTTON_CLASS}::before { content: ""; position: absolute; inset: -4px 0; }
+        /* The :not(#id) parts add ID-level specificity, so theme rules (Reddit, RES)
+           can't outrank these !important declarations without heavier selectors of
+           their own. position: relative also lifts the button above the full-post
+           link overlay on new-layout feed cards. */
+        ${BUTTON} {
+            box-sizing: border-box !important; position: relative !important;
+            display: inline-flex !important; align-items: center !important; gap: 4px !important;
+            width: auto !important; min-width: 0 !important;
+            height: 22px !important; min-height: 22px !important; max-height: 22px !important;
+            margin: 0 !important; padding: 0 8px !important; vertical-align: middle !important;
+            border: 1px solid currentColor !important; border-radius: 999px !important;
+            background: transparent none !important; box-shadow: none !important; text-shadow: none !important;
+            appearance: none !important; color: inherit !important; cursor: pointer !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            font-size: 11px !important; font-style: normal !important; font-weight: 600 !important;
+            line-height: 1 !important; letter-spacing: normal !important; text-transform: none !important;
+            white-space: nowrap !important;
+        }
+        ${BUTTON} svg { width: 10px !important; height: 10px !important; flex-shrink: 0 !important; margin: 0 !important; }
+        ${BUTTON}.rvd-below-video { margin-top: 8px !important; }
+        ${BUTTON}[data-theme="dark"] { color: ${DARK_THEME_GREEN} !important; }
+        ${BUTTON}:hover { background-color: rgba(128, 128, 128, 0.15) !important; }
+        ${BUTTON}[data-theme="dark"]:hover { background-color: rgba(126, 231, 135, 0.15) !important; }
+        ${BUTTON}[aria-disabled="true"] { cursor: progress !important; }
+        ${BUTTON}:focus-visible { outline: 2px solid currentColor !important; outline-offset: 2px !important; }
+        /* Extends the click target to 26px tall (WCAG 2.2 AA target size is 24px) without changing the look. */
+        ${BUTTON}::before { content: "" !important; position: absolute !important; inset: -2px 0 !important; }
     `;
     document.head.append(style);
+
+    // -------------------------------------------------------------- theming
+
+    // Reads the first mostly-opaque background behind the button, so any theme
+    // (new Reddit dark mode, RES night mode, subreddit styles) is handled the same way.
+    const isOnDarkBackground = (element) => {
+        for (let node = element.parentElement; node; node = node.parentElement) {
+            const match = getComputedStyle(node).backgroundColor.match(/[\d.]+/g);
+            if (!match) continue;
+            const [r, g, b, alpha = 1] = match.map(Number);
+            if (alpha < 0.5) continue;
+            return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+        }
+        return false;
+    };
+
+    const updateThemes = () => {
+        for (const button of document.querySelectorAll(`.${BUTTON_CLASS}`)) {
+            const theme = isOnDarkBackground(button) ? 'dark' : 'light';
+            if (button.dataset.theme !== theme) button.dataset.theme = theme;
+        }
+    };
 
     // -------------------------------------------------------------- bootstrap
 
@@ -315,6 +314,7 @@
     const enhance = () => {
         enhanceOldReddit();
         enhanceNewReddit();
+        updateThemes();
     };
     let pending = null;
     const scheduleEnhance = () => {
@@ -323,5 +323,10 @@
     };
 
     new MutationObserver(scheduleEnhance).observe(document.documentElement, { childList: true, subtree: true });
+    // Theme switches usually toggle a class or attribute on <html> or <body>.
+    const themeObserver = new MutationObserver(scheduleEnhance);
+    for (const root of [document.documentElement, document.body]) {
+        themeObserver.observe(root, { attributes: true, attributeFilter: ['class', 'style', 'theme', 'data-theme'] });
+    }
     enhance();
 })();
