@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
 // @namespace    github.com/jcackowski/userscripts
-// @version      0.1.0
+// @version      0.1.1
 // @description  Adds a download button under YouTube videos that hands the video to yt-dlp on your computer.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/userscripts
@@ -9,15 +9,15 @@
 // @license      MIT
 // @match        https://www.youtube.com/*
 // @grant        none
-// @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download.user.js
-// @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download.user.js
+// @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
+// @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
 // ==/UserScript==
 
 /*
  * How it works
  * - The button opens a `ytdlp:youtube/<video ID>` link. Windows passes it to
- *   yt-dlp-handler/ytdlp-handler.ps1 in this repo (registered by install.ps1),
- *   which runs yt-dlp in a console window.
+ *   ytdlp-handler.ps1 (set up by install.ps1 in this folder), which runs
+ *   yt-dlp in the background and reports through Windows notifications.
  * - Only the video ID is sent; the handler rebuilds the YouTube URL itself.
  * - YouTube changes videos without reloading the page, so the video ID and
  *   title are read when the button is pressed, not when it is added.
@@ -94,7 +94,7 @@
             if (!video) return;
             location.href = `ytdlp:youtube/${video.id}`;
             setLabel(button, 'sent to yt-dlp');
-            announce(`Sent ${video.title || 'this video'} to yt-dlp. Progress is shown in its own window.`);
+            announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
             clearTimeout(resetTimer);
             resetTimer = setTimeout(() => setLabel(button, IDLE_LABEL), 4000);
         });
