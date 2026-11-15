@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Reddit Video Downloader
 // @namespace    reddit-video-downloader
-// @version      0.4.1
+// @version      0.5.0
 // @description  One-click download of Reddit-hosted (v.redd.it) videos, with sound, on old and new Reddit layouts.
 // @match        https://old.reddit.com/*
 // @match        https://www.reddit.com/*
 // @connect      sh.reddit.com
 // @connect      packaged-media.redd.it
 // @grant        GM_xmlhttpRequest
+// @grant        GM_notification
 // @license      MIT
 // @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js
 // @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js
@@ -132,6 +133,25 @@
         }, 50);
     };
 
+    // ---------------------------------------------------------- notifications
+
+    // A desktop notification when a download finishes or fails, so you can
+    // switch tabs while it runs. Clicking it returns to the button. The post ID
+    // is used as the tag, so a retry replaces the earlier notification.
+    const notify = (button, postId, title, text) => {
+        if (typeof GM_notification !== 'function') return;
+        GM_notification({
+            title,
+            text,
+            tag: postId,
+            onclick: () => {
+                window.focus();
+                button.scrollIntoView({ block: 'center' });
+                button.focus();
+            },
+        });
+    };
+
     // ----------------------------------------------------------------- button
 
     const ICON =
@@ -184,9 +204,11 @@
             saveBlob(blob, filename);
             setButtonState(button, 'done', 'downloaded');
             announce(`Saved ${filename}`);
+            notify(button, info.postId, 'Saved', filename);
         } catch (error) {
             setButtonState(button, 'error', `retry download (${error.message})`);
             announce(`Download failed: ${error.message}. Press the button to try again.`);
+            notify(button, info.postId, 'Download failed', `${(info.title || filename).replace(/[.!?]+$/, '')}: ${error.message}. Click to go back and try again.`);
         }
     };
 
