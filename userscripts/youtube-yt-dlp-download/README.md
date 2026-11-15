@@ -17,7 +17,8 @@ The first click asks to open **yt-dlp**. You can allow it permanently for youtub
 
 ## Using it
 
-- Downloads run in the background, with no window. Windows notifications show when a download starts, is queued, is saved (click to open the folder) or fails.
+- Downloads run in the background, with no window. Each video gets one Windows notification with a progress bar that turns into **Saved** when done. Clicking the Saved pop-up shows the file in File Explorer. This doesn't work from the notification centre, a Windows limitation for scripts like this.
+- A video that's already in `Downloads\yt-dlp` (matched by the `[video ID]` at the end of its file name) isn't downloaded again; you get an **Already downloaded** notification instead.
 - When a download fails, the notification says why, and clicking it opens a log with yt-dlp's full output. Logs are kept only for failures, in `%LOCALAPPDATA%\yt-dlp-handler\logs` (the newest 20).
 - Videos clicked while one is downloading are queued (up to 20). Repeat clicks are ignored.
 - Keep yt-dlp current with `yt-dlp -U` or `winget upgrade yt-dlp.yt-dlp`. YouTube changes often break older versions.
