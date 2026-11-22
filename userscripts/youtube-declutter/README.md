@@ -4,7 +4,7 @@ Trims YouTube down to the parts you use: hides unused sidebar sections, the home
 
 ## Install
 
-Open [youtube-declutter.user.js](https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-declutter/youtube-declutter.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
+Open [youtube-declutter.user.js](https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-declutter/youtube-declutter.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
 
 ## Settings
 

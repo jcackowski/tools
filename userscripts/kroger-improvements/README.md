@@ -4,7 +4,7 @@ Makes kroger.com less sluggish by stopping the analytics, survey and performance
 
 ## Install
 
-Open [kroger-improvements.user.js](https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/kroger-improvements/kroger-improvements.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
+Open [kroger-improvements.user.js](https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/kroger-improvements/kroger-improvements.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
 
 ## What it blocks
 

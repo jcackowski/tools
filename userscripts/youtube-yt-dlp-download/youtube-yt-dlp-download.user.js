@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
-// @namespace    github.com/jcackowski/userscripts
-// @version      0.1.1
+// @namespace    github.com/jcackowski/tools
+// @version      0.1.2
 // @description  Adds a download button under YouTube videos that hands the video to yt-dlp on your computer.
 // @author       Jay Cackowski
-// @homepageURL  https://github.com/jcackowski/userscripts
-// @supportURL   https://github.com/jcackowski/userscripts/issues
+// @homepageURL  https://github.com/jcackowski/tools
+// @supportURL   https://github.com/jcackowski/tools/issues
 // @license      MIT
 // @match        https://www.youtube.com/*
 // @grant        none
-// @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
-// @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
+// @downloadURL  https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
+// @updateURL    https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
 // ==/UserScript==
 
 /*

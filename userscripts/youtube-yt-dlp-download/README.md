@@ -8,10 +8,10 @@ Windows only. YouTube doesn't offer full-quality downloads a browser can save di
 
 1. Install the helper: paste this into PowerShell.
    ```powershell
-   irm https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/install.ps1 | iex
+   irm https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/install.ps1 | iex
    ```
    It installs yt-dlp, Deno and FFmpeg with winget if they're missing, saves the helper to `%LOCALAPPDATA%\yt-dlp-handler`, and adds a `ytdlp:` link type for your Windows user (no admin needed). [Read install.ps1](install.ps1) first if you like. Run the same command again to update the helper.
-2. Install the userscript: open [youtube-yt-dlp-download.user.js](https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
+2. Install the userscript: open [youtube-yt-dlp-download.user.js](https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
 
 The first click asks to open **yt-dlp**. You can allow it permanently for youtube.com.
 
@@ -30,7 +30,7 @@ Any web page can open a `ytdlp:` link, so the helper accepts only an 11-characte
 ## Uninstall
 
 ```powershell
-irm https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/uninstall.ps1 | iex
+irm https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/uninstall.ps1 | iex
 ```
 
 Then remove the userscript. yt-dlp, Deno and FFmpeg stay installed; remove them with `winget uninstall` if you no longer need them.

@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         YouTube Declutter
-// @namespace    github.com/jcackowski/userscripts
-// @version      0.1.1
+// @namespace    github.com/jcackowski/tools
+// @version      0.1.2
 // @description  Hides unused sidebar sections, banners and shelves on YouTube, expands the subscriptions list, and opens Shorts in the normal player.
 // @author       Jay Cackowski
-// @homepageURL  https://github.com/jcackowski/userscripts
-// @supportURL   https://github.com/jcackowski/userscripts/issues
+// @homepageURL  https://github.com/jcackowski/tools
+// @supportURL   https://github.com/jcackowski/tools/issues
 // @license      MIT
 // @match        https://www.youtube.com/*
 // @grant        none
 // @run-at       document-start
-// @downloadURL  https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-declutter/youtube-declutter.user.js
-// @updateURL    https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-declutter/youtube-declutter.user.js
+// @downloadURL  https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-declutter/youtube-declutter.user.js
+// @updateURL    https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-declutter/youtube-declutter.user.js
 // ==/UserScript==
 
 /*

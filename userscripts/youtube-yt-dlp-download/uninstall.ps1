@@ -1,7 +1,7 @@
 # Removes what install.ps1 added: the ytdlp: link type and
 # %LOCALAPPDATA%\yt-dlp-handler. yt-dlp, Deno and FFmpeg stay installed.
 #
-#   irm https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/uninstall.ps1 | iex
+#   irm https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/uninstall.ps1 | iex
 
 & {
     $key = 'HKCU:\Software\Classes\ytdlp'

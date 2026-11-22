@@ -1,6 +1,6 @@
 # Installs the helper for the YouTube yt-dlp Download userscript.
 #
-#   irm https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/install.ps1 | iex
 #
 # - Installs yt-dlp, Deno and FFmpeg with winget if they're missing.
 # - Puts ytdlp-handler.ps1 in %LOCALAPPDATA%\yt-dlp-handler. Run from a copy
@@ -13,8 +13,8 @@
 
 & {
     $ErrorActionPreference = 'Stop'
-    $handlerSource = 'https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/ytdlp-handler.ps1'
-    $userscriptUrl = 'https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js'
+    $handlerSource = 'https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/ytdlp-handler.ps1'
+    $userscriptUrl = 'https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js'
     $installDir = Join-Path $env:LOCALAPPDATA 'yt-dlp-handler'
     $handler = Join-Path $installDir 'ytdlp-handler.ps1'
     $key = 'HKCU:\Software\Classes\ytdlp'

@@ -10,7 +10,7 @@ No other software is needed. For YouTube downloads, see [YouTube yt-dlp Download
 
 ## Install
 
-Open [reddit-video-downloader.user.js](https://raw.githubusercontent.com/jcackowski/userscripts/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
+Open [reddit-video-downloader.user.js](https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
 
 ## How it works
 

@@ -1,6 +1,10 @@
-# userscripts
+# tools
 
-Small browser tweaks for sites I use: userscripts that add features, and userstyles that change how pages look.
+Small productivity tools I build for my own use.
 
-- **Userscripts** (`userscripts/`) run in a userscript manager such as [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/). Each one has its own folder with a README that explains how to install it.
-- **Userstyles** (`userstyles/`) are plain CSS. Add them in a style manager such as [Stylus](https://add0n.com/stylus.html) for the site they target.
+- [**Userscripts**](userscripts/) add features to websites. They run in a userscript manager such as [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/).
+- [**Userstyles**](userstyles/) change how websites look. They run in [Stylus](https://add0n.com/stylus.html).
+
+Each folder's README lists what's in it and how to install it.
+
+Licensed under MIT.
