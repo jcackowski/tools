@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
 // @namespace    github.com/jcackowski/tools
-// @version      0.6.0
+// @version      0.7.0
 // @description  Makes YouTube's Download buttons hand the video to yt-dlp on your computer.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
@@ -169,37 +169,59 @@
 
     // The row of buttons under a playing video always gets a Download button.
     // If YouTube rendered its own, which it sometimes keeps hidden (signed
-    // out, for example), that one is unhidden. Otherwise the Share button is
-    // copied and turned into Download, so it takes YouTube's own styling, size
-    // and theme. The copy has none of YouTube's code behind it; clicks on it
-    // are handled above like any other Download.
+    // out, for example), that one is unhidden. Otherwise a Download button is
+    // built with the classes of one of the row's own buttons (Share, Save...),
+    // so it takes YouTube's styling, size and theme, and gets its own icon.
+    // Those buttons are styled the moment the row appears, while their icons
+    // are drawn later, so nothing here waits on an icon. The button has none
+    // of YouTube's code behind it; clicks on it are handled above like any
+    // other Download.
     //
-    // The copy goes right after #flexible-item-buttons (after Save, before ⋯),
-    // where YouTube's own row Download sits. Inside that container YouTube
-    // redraws its children and drops the copy, and the extra width can make
-    // it move Share and Save into the ⋯ menu.
-    const SHARE_ICON = 'path[d^="M10 3.158V7.51"]';
+    // The button goes right after #flexible-item-buttons (after Save, before
+    // ⋯), where YouTube's own row Download sits. Inside that container YouTube
+    // redraws its children and drops it, and the extra width can make it move
+    // Share and Save into the ⋯ menu.
     const ROW_ANCHOR = 'ytd-watch-metadata #actions ytd-menu-renderer #flexible-item-buttons';
+    // Share, Save and the like. Like/Dislike and ⋯ are built differently.
+    const ROW_BUTTON = 'ytd-watch-metadata #actions yt-button-view-model button';
     const DOWNLOAD_ICON_PATH = 'M12 2a1 1 0 00-1 1v11.586l-4.293-4.293a1 1 0 10-1.414 1.414L12 18.414l6.707-6.707a1 1 0 10-1.414-1.414L13 14.586V3a1 1 0 00-1-1Zm7 18H5a1 1 0 000 2h14a1 1 0 000-2Z';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
 
-    const createRowCopy = (share) => {
-        const button = share.cloneNode(true);
-        // YouTube's own components inside the copy would start up with no data.
-        button.querySelectorAll('yt-touch-feedback-shape').forEach((node) => node.remove());
+    // Built with DOM calls: YouTube enforces Trusted Types, which blocks innerHTML.
+    const createRowButton = (template) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = template.className;
         button.setAttribute('aria-label', 'Download');
         button.title = 'Download';
-        button.querySelector('svg path')?.setAttribute('d', DOWNLOAD_ICON_PATH);
-        const label = button.querySelector('[class*="ButtonTextContent"]');
-        if (label) label.textContent = 'Download';
+
+        const icon = document.createElement('div');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.className = template.querySelector('div[class*="ButtonShapeNextIcon"]')?.className || '';
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '24');
+        svg.setAttribute('height', '24');
+        svg.setAttribute('focusable', 'false');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.style.cssText = 'display: block; fill: currentcolor; pointer-events: none;';
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', DOWNLOAD_ICON_PATH);
+        svg.append(path);
+        icon.append(svg);
+        button.append(icon);
+
         const wrapper = document.createElement('div');
         wrapper.className = ROW_COPY_CLASS;
         wrapper.append(button);
         return wrapper;
     };
 
-    // On narrow windows YouTube moves Share into the ⋯ menu, so the last Share
-    // button seen is kept to copy from.
-    let shareTemplate = null;
+    // Prefers an icon-only button, like the one being built.
+    const findTemplate = () => {
+        const buttons = [...document.querySelectorAll(ROW_BUTTON)];
+        return buttons.find((button) => button.className.includes('IconButton')) || buttons[0] || null;
+    };
 
     const enhance = () => {
         if (!currentVideo()) return;
@@ -212,11 +234,12 @@
             return;
         }
 
-        shareTemplate = document.querySelector(`ytd-watch-metadata #actions button:has(${SHARE_ICON})`) || shareTemplate;
         const anchor = document.querySelector(ROW_ANCHOR);
-        if (!shareTemplate || !anchor || copy?.previousElementSibling === anchor) return;
+        if (!anchor || copy?.previousElementSibling === anchor) return;
+        const template = findTemplate();
+        if (!template) return;
         copy?.remove();
-        anchor.after(createRowCopy(shareTemplate));
+        anchor.after(createRowButton(template));
     };
 
     // ----------------------------------------------------------------- styles
@@ -234,17 +257,13 @@
 
     // -------------------------------------------------------------- bootstrap
 
-    let pending = null;
-    const scheduleEnhance = () => {
-        clearTimeout(pending);
-        pending = setTimeout(enhance, 150);
-    };
-
-    // Menu text is replaced straight away, so YouTube's own wording never shows.
-    // `is-hidden` is watched so YouTube's own row Download stays unhidden.
+    // Both run on every page change, with no delay, so the Download button
+    // appears with the row and YouTube's menu wording never shows. Each run is
+    // a few element lookups once everything is in place. `is-hidden` is
+    // watched so YouTube's own row Download stays unhidden.
     new MutationObserver(() => {
         relabelDownloadItems();
-        scheduleEnhance();
+        enhance();
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['is-hidden'] });
     enhance();
 })();
