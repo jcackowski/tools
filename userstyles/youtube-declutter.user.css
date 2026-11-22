@@ -1,0 +1,38 @@
+/* ==UserStyle==
+@name           YouTube Declutter
+@namespace      github.com/jcackowski/userscripts
+@version        1.0.0
+@description    Hides extra sidebar guide sections, the footer, the Create button, game shelves, the engagement panel scrim, and channel banners on YouTube.
+@author         Jay Cackowski
+@homepageURL    https://github.com/jcackowski/userscripts
+@supportURL     https://github.com/jcackowski/userscripts/issues
+@license        MIT
+@updateURL      https://raw.githubusercontent.com/jcackowski/userscripts/main/userstyles/youtube-declutter.user.css
+==/UserStyle== */
+@-moz-document domain("youtube.com") {
+    #sections ytd-guide-section-renderer:nth-child(1),
+    /* #sections ytd-guide-section-renderer:nth-child(3), */
+    #sections ytd-guide-section-renderer:nth-child(4),
+    #sections ytd-guide-section-renderer:nth-child(5),
+    #sections ytd-guide-section-renderer:nth-child(6) {
+        display: none;
+    }
+    #footer {
+        display: none;
+    }
+    button[aria-label="Create"] {
+        display: none;
+    }
+    ytd-rich-section-renderer:has(ytd-mini-game-card-view-model) {
+        display: none;
+    }
+    #engagement-panel-scrim {
+        display: none !important;
+    }
+    #page-header-banner {
+        display: none;
+    }
+    /* grid-shelf-view-model {
+        display: none !important;
+    } */
+}
