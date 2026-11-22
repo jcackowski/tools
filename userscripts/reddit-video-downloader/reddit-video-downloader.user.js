@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Video Downloader
 // @namespace    reddit-video-downloader
-// @version      0.5.1
+// @version      0.5.2
 // @description  One-click download of Reddit-hosted (v.redd.it) videos, with sound, on old and new Reddit layouts.
 // @match        https://old.reddit.com/*
 // @match        https://www.reddit.com/*
@@ -10,6 +10,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_notification
 // @license      MIT
+// @icon         https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/_shared/icon.svg
 // @downloadURL  https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js
 // @updateURL    https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/reddit-video-downloader/reddit-video-downloader.user.js
 // ==/UserScript==

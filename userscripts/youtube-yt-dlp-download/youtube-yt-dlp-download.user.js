@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
 // @namespace    github.com/jcackowski/tools
-// @version      0.1.2
+// @version      0.1.3
 // @description  Adds a download button under YouTube videos that hands the video to yt-dlp on your computer.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
 // @supportURL   https://github.com/jcackowski/tools/issues
 // @license      MIT
+// @icon         https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/_shared/icon.svg
 // @match        https://www.youtube.com/*
 // @grant        none
 // @downloadURL  https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
@@ -100,6 +101,61 @@
         });
         return button;
     };
+
+    // ------------------------------------------------- thumbnail menu Download
+
+    // YouTube's own Download item in a thumbnail's ⋮ menu sends the video to
+    // yt-dlp instead. Older menus render it as its own element; newer ones as a
+    // generic list item recognised by its download icon, so this works in any
+    // page language.
+    const DOWNLOAD_ITEM = 'ytd-menu-service-item-download-renderer';
+    const DOWNLOAD_ICON = 'path[d^="M12 2a1 1 0 00-1 1v11.586l"]';
+    const VIDEO_LINK = /[?&]v=([A-Za-z0-9_-]{11})|\/shorts\/([A-Za-z0-9_-]{11})/;
+
+    // The menu opens in a popup away from the thumbnail, so the video is noted
+    // when its ⋮ button is pressed: the nearest ancestor that links to exactly
+    // one video is taken to be the thumbnail.
+    let menuVideo = null;
+    const videoAround = (button) => {
+        for (let node = button.parentElement; node && node !== document.body; node = node.parentElement) {
+            const ids = new Set();
+            for (const link of node.querySelectorAll('a[href]')) {
+                const match = link.getAttribute('href').match(VIDEO_LINK);
+                if (match) ids.add(match[1] || match[2]);
+            }
+            if (ids.size === 1) {
+                const title = node.querySelector('#video-title, h3, a[title]');
+                return { id: [...ids][0], title: (title?.getAttribute('title') || title?.textContent || '').trim() };
+            }
+            if (ids.size > 1) return null;
+        }
+        return null;
+    };
+
+    const downloadItemFrom = (target) => {
+        const item = target.closest(DOWNLOAD_ITEM);
+        if (item) return item;
+        const listItem = target.closest('yt-list-item-view-model');
+        return listItem?.querySelector(DOWNLOAD_ICON) ? listItem : null;
+    };
+
+    window.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) return;
+        const item = downloadItemFrom(event.target);
+        if (!item) {
+            const button = event.target.closest('button');
+            if (button && !button.closest('ytd-popup-container, tp-yt-iron-dropdown')) menuVideo = videoAround(button);
+            return;
+        }
+        const dataId = item.data?.serviceEndpoint?.offlineVideoEndpoint?.videoId;
+        const video = VIDEO_ID.test(dataId || '') ? { id: dataId, title: dataId === menuVideo?.id ? menuVideo.title : '' } : menuVideo;
+        if (!video) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        location.href = `ytdlp:youtube/${video.id}`;
+        announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
+        item.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, composed: true }));
+    }, true);
 
     const enhance = () => {
         const video = currentVideo();

@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Kroger Improvements
 // @namespace    github.com/jcackowski/tools
-// @version      0.3.1
+// @version      0.3.2
 // @description  Speeds up kroger.com by stopping analytics, survey and monitoring scripts, and hides sponsored ads and products.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
 // @supportURL   https://github.com/jcackowski/tools/issues
 // @license      MIT
+// @icon         https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/_shared/icon.svg
 // @match        https://www.kroger.com/*
 // @grant        none
 // @run-at       document-start
