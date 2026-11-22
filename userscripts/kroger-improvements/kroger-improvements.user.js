@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kroger Improvements
 // @namespace    github.com/jcackowski/userscripts
-// @version      0.2.0
+// @version      0.3.0
 // @description  Speeds up kroger.com by stopping analytics, survey and monitoring scripts, and hides sponsored ads and products.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/userscripts
@@ -30,6 +30,15 @@
 
 (() => {
     'use strict';
+
+    // The first visit to the home page in a browser session goes to My Recent
+    // Purchases instead. A session cookie (no expiry) remembers that it happened.
+    const REDIRECT_COOKIE = 'kroger_improvements_redirected=1';
+    if (window.top === window && location.pathname === '/' && !document.cookie.split('; ').includes(REDIRECT_COOKIE)) {
+        document.cookie = `${REDIRECT_COOKIE}; path=/; secure; samesite=lax`;
+        location.replace('/products/my-recent-purchases');
+        return;
+    }
 
     // Set to false if uBlock Origin is installed and you'd rather leave these to it.
     const BLOCK_UBLOCK_OVERLAP = true;
