@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Kroger Improvements
 // @namespace    github.com/jcackowski/userscripts
-// @version      0.1.0
-// @description  Speeds up kroger.com by stopping analytics, survey and monitoring scripts from loading.
+// @version      0.2.0
+// @description  Speeds up kroger.com by stopping analytics, survey and monitoring scripts, and hides sponsored ads and products.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/userscripts
 // @supportURL   https://github.com/jcackowski/userscripts/issues
@@ -102,4 +102,37 @@
         }
         return setAttribute.call(this, name, value);
     };
+
+    // Hidden with CSS, added before the page renders so nothing jumps.
+    const HIDDEN = [
+        // Banner and video ads ("Sponsored" footer).
+        '.TOAContainer',
+        '[data-testid^="monetization/"]',
+        '[data-testid="fca-overlay"]',
+        'iframe[title^="Video: Sponsored"]',
+        // Sponsored products. Grid results hide their direct grid child so the
+        // next product fills the slot.
+        '.AutoGrid > :has([data-testid="pla-compliance-tag"])',
+        'li.citrus-Carousel-item:has([data-testid="pla-compliance-tag"])',
+        // Sponsored product sections on the home page. The icon-and-text
+        // header is where these sections show their "Sponsored" label.
+        '[data-testid="PremiumPlacementCarouselContainer"]',
+        '.ProductListContainer:has([data-testid="HeaderSection"] [data-testid="icon-and-text"])',
+        // "Shop More" links under search results.
+        '.ShopMoreWrapper',
+    ];
+
+    const style = document.createElement('style');
+    style.textContent = `${HIDDEN.join(',\n')} { display: none !important; }`;
+    const addStyle = () => (document.head || document.documentElement).appendChild(style);
+    if (document.documentElement) {
+        addStyle();
+    } else {
+        new MutationObserver((_, observer) => {
+            if (document.documentElement) {
+                observer.disconnect();
+                addStyle();
+            }
+        }).observe(document, { childList: true });
+    }
 })();
