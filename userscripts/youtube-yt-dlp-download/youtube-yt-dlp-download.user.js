@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
 // @namespace    github.com/jcackowski/tools
-// @version      0.3.0
-// @description  Adds a download button under YouTube videos that hands the video to yt-dlp on your computer.
+// @version      0.6.0
+// @description  Makes YouTube's Download buttons hand the video to yt-dlp on your computer.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
 // @supportURL   https://github.com/jcackowski/tools/issues
@@ -17,7 +17,9 @@
 
 /*
  * How it works
- * - The button opens a `ytdlp:youtube/<video ID>` link. Windows passes it to
+ * - YouTube's own Download is taken over, in menus and in the row of buttons
+ *   under a playing video. That row always gets a Download button.
+ * - Each one opens a `ytdlp:youtube/<video ID>` link. Windows passes it to
  *   ytdlp-handler.ps1 (set up by install.ps1 in this folder), which runs
  *   yt-dlp in the background and reports through Windows notifications.
  * - Only the video ID is sent; the handler rebuilds the YouTube URL itself.
@@ -32,9 +34,6 @@
     // script on the page can replace the global with a different version.
     const notifications = globalThis.jcNotifications;
 
-    const BUTTON_CLASS = 'yyd-download';
-    const BUTTON = `button.${BUTTON_CLASS}.${BUTTON_CLASS}:not(#yyd-a):not(#yyd-b)`;
-    const DARK_THEME_GREEN = '#7ee787';
     const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 
     const currentVideo = () => {
@@ -60,97 +59,42 @@
         }, 50);
     };
 
-    // ----------------------------------------------------------------- button
+    // ---------------------------------------------------------------- sending
 
-    // YouTube enforces Trusted Types, which blocks innerHTML, so the button is
-    // built with DOM calls.
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const createIcon = () => {
-        const svg = document.createElementNS(SVG_NS, 'svg');
-        svg.setAttribute('aria-hidden', 'true');
-        svg.setAttribute('focusable', 'false');
-        svg.setAttribute('viewBox', '0 0 20 20');
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('fill', 'currentColor');
-        path.setAttribute('d', 'M9 2h2v8.6l3.3-3.3 1.4 1.4L10 14.4 4.3 8.7l1.4-1.4L9 10.6V2zM3 16h14v2H3z');
-        svg.append(path);
-        return svg;
-    };
-    const IDLE_LABEL = 'Download with yt-dlp';
-
-    // ------------------------------------------------------- first-run notice
-
-    // The page can't tell whether the ytdlp: link reached the helper, so the
-    // first click opens a modal saying what to expect. The flag lives in
-    // youtube.com's localStorage; clearing site data shows it again. If
-    // storage is blocked, it shows once per page load.
-    const NOTICE_KEY = 'yyd-first-run-notice-shown';
-    const NOTICE_TEXT = "A Windows notification should appear within a few seconds. If none does, the yt-dlp helper isn't installed on this PC yet.";
+    // The page can't tell whether the ytdlp: link reached the helper, so every
+    // download opens a modal saying what to expect.
     const SETUP_URL = 'https://github.com/jcackowski/tools/tree/main/userscripts/youtube-yt-dlp-download#install';
 
-    let noticeTaken = false;
-    const isFirstClick = () => {
-        if (noticeTaken) return false;
-        noticeTaken = true;
-        try {
-            if (localStorage.getItem(NOTICE_KEY)) return false;
-            localStorage.setItem(NOTICE_KEY, '1');
-        } catch {
-            // Storage blocked: the in-memory flag above still limits it to once.
+    const sendToYtDlp = (video) => {
+        location.href = `ytdlp:youtube/${video.id}`;
+        const name = video.title ? `“${video.title}”` : 'This video';
+        const message = `${name} should show up in a Windows notification within a few seconds. If it doesn't, the yt-dlp helper isn't installed on this PC yet.`;
+        // If the @require'd library didn't load, screen readers still hear it.
+        if (!notifications) {
+            announce(message);
+            return;
         }
-        return true;
-    };
-
-    const showNotice = (button) => {
         notifications.showModal({
             title: 'Sent to yt-dlp',
-            message: NOTICE_TEXT,
+            message,
             link: { text: 'Install the helper', href: SETUP_URL },
             closeLabel: 'Got it',
-            theme: button.dataset.theme,
+            // YouTube's dark theme sets the `dark` attribute on <html>.
+            theme: document.documentElement.hasAttribute('dark') ? 'dark' : 'light',
         });
     };
 
-    let resetTimer = null;
-    const setLabel = (button, text) => {
-        button.querySelector('.yyd-label').textContent = text;
-    };
+    // ------------------------------------------------- YouTube's own Download
 
-    const createButton = () => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = BUTTON_CLASS;
-        const label = document.createElement('span');
-        label.className = 'yyd-label';
-        const srOnly = document.createElement('span');
-        srOnly.className = 'yyd-sr-only';
-        button.append(createIcon(), label, srOnly);
-        setLabel(button, IDLE_LABEL);
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const video = currentVideo();
-            if (!video) return;
-            location.href = `ytdlp:youtube/${video.id}`;
-            setLabel(button, 'sent to yt-dlp');
-            // If the @require'd library didn't load, skip the modal and keep the flag unset.
-            if (notifications && isFirstClick()) {
-                showNotice(button);
-            } else {
-                announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
-            }
-            clearTimeout(resetTimer);
-            resetTimer = setTimeout(() => setLabel(button, IDLE_LABEL), 4000);
-        });
-        return button;
-    };
-
-    // ------------------------------------------------- thumbnail menu Download
-
-    // YouTube's own Download item in a thumbnail's ⋮ menu sends the video to
-    // yt-dlp instead. Older menus render it as its own element; newer ones as a
+    // YouTube's own Download sends the video to yt-dlp instead: the item in a
+    // thumbnail's ⋮ menu, the item in the More actions (⋯) menu under a
+    // playing video, and the Download button in the row next to Share (see
+    // below). Older menus render the item as its own element; newer ones as a
     // generic list item recognised by its download icon, so this works in any
     // page language.
+    const NATIVE_ROW_DOWNLOAD = 'ytd-watch-metadata ytd-download-button-renderer';
+    const ROW_COPY_CLASS = 'yyd-row-download';
+    const ROW_DOWNLOAD = `${NATIVE_ROW_DOWNLOAD}, ytd-watch-metadata .${ROW_COPY_CLASS}`;
     const DOWNLOAD_ITEM = 'ytd-menu-service-item-download-renderer';
     const DOWNLOAD_ICON = 'path[d^="M12 2a1 1 0 00-1 1v11.586l"]';
     const VIDEO_LINK = /[?&]v=([A-Za-z0-9_-]{11})|\/shorts\/([A-Za-z0-9_-]{11})/;
@@ -184,6 +128,14 @@
 
     window.addEventListener('click', (event) => {
         if (!(event.target instanceof Element)) return;
+        if (event.target.closest(ROW_DOWNLOAD)) {
+            const video = currentVideo();
+            if (!video) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            sendToYtDlp(video);
+            return;
+        }
         const item = downloadItemFrom(event.target);
         if (!item) {
             const button = event.target.closest('button');
@@ -191,32 +143,80 @@
             return;
         }
         const dataId = item.data?.serviceEndpoint?.offlineVideoEndpoint?.videoId;
-        const video = VIDEO_ID.test(dataId || '') ? { id: dataId, title: dataId === menuVideo?.id ? menuVideo.title : '' } : menuVideo;
+        const playing = currentVideo();
+        const titleOf = (id) => (id === playing?.id ? playing.title : id === menuVideo?.id ? menuVideo.title : '');
+        const video = VIDEO_ID.test(dataId || '') ? { id: dataId, title: titleOf(dataId) } : menuVideo;
         if (!video) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        location.href = `ytdlp:youtube/${video.id}`;
-        announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
         item.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, composed: true }));
+        sendToYtDlp(video);
     }, true);
 
-    const enhance = () => {
-        const video = currentVideo();
-        const title = document.querySelector('ytd-watch-metadata #title');
-        let button = document.querySelector(`.${BUTTON_CLASS}`);
-        if (!video || !title) return;
-
-        if (!button || button.parentElement !== title.parentElement) {
-            button?.remove();
-            button = createButton();
-            title.after(button);
+    // The Download item in the ⋯ menu under a playing video has a second line
+    // of YouTube's own (a Premium offer). Whatever it says, it's replaced with
+    // what the item does now. Thumbnail ⋮ menus have no second line.
+    const SUBTITLE = `${DOWNLOAD_ITEM} basic-content-view-model`;
+    const SUBTITLE_TEXT = 'Send to yt-dlp';
+    const relabelDownloadItems = () => {
+        for (const subtitle of document.querySelectorAll(SUBTITLE)) {
+            const text = [...subtitle.querySelectorAll('*')].find((node) => !node.children.length) || subtitle;
+            if (text.textContent !== SUBTITLE_TEXT) text.textContent = SUBTITLE_TEXT;
         }
-        const name = `: ${video.title}`;
-        const srOnly = button.querySelector('.yyd-sr-only');
-        if (srOnly.textContent !== name) srOnly.textContent = name;
+    };
 
-        const theme = isOnDarkBackground(button) ? 'dark' : 'light';
-        if (button.dataset.theme !== theme) button.dataset.theme = theme;
+    // ---------------------------------------------- Download next to Share
+
+    // The row of buttons under a playing video always gets a Download button.
+    // If YouTube rendered its own, which it sometimes keeps hidden (signed
+    // out, for example), that one is unhidden. Otherwise the Share button is
+    // copied and turned into Download, so it takes YouTube's own styling, size
+    // and theme. The copy has none of YouTube's code behind it; clicks on it
+    // are handled above like any other Download.
+    //
+    // The copy goes right after #flexible-item-buttons (after Save, before ⋯),
+    // where YouTube's own row Download sits. Inside that container YouTube
+    // redraws its children and drops the copy, and the extra width can make
+    // it move Share and Save into the ⋯ menu.
+    const SHARE_ICON = 'path[d^="M10 3.158V7.51"]';
+    const ROW_ANCHOR = 'ytd-watch-metadata #actions ytd-menu-renderer #flexible-item-buttons';
+    const DOWNLOAD_ICON_PATH = 'M12 2a1 1 0 00-1 1v11.586l-4.293-4.293a1 1 0 10-1.414 1.414L12 18.414l6.707-6.707a1 1 0 10-1.414-1.414L13 14.586V3a1 1 0 00-1-1Zm7 18H5a1 1 0 000 2h14a1 1 0 000-2Z';
+
+    const createRowCopy = (share) => {
+        const button = share.cloneNode(true);
+        // YouTube's own components inside the copy would start up with no data.
+        button.querySelectorAll('yt-touch-feedback-shape').forEach((node) => node.remove());
+        button.setAttribute('aria-label', 'Download');
+        button.title = 'Download';
+        button.querySelector('svg path')?.setAttribute('d', DOWNLOAD_ICON_PATH);
+        const label = button.querySelector('[class*="ButtonTextContent"]');
+        if (label) label.textContent = 'Download';
+        const wrapper = document.createElement('div');
+        wrapper.className = ROW_COPY_CLASS;
+        wrapper.append(button);
+        return wrapper;
+    };
+
+    // On narrow windows YouTube moves Share into the ⋯ menu, so the last Share
+    // button seen is kept to copy from.
+    let shareTemplate = null;
+
+    const enhance = () => {
+        if (!currentVideo()) return;
+        const copy = document.querySelector(`.${ROW_COPY_CLASS}`);
+
+        const native = document.querySelector(NATIVE_ROW_DOWNLOAD);
+        if (native) {
+            copy?.remove();
+            if (native.hasAttribute('is-hidden')) native.removeAttribute('is-hidden');
+            return;
+        }
+
+        shareTemplate = document.querySelector(`ytd-watch-metadata #actions button:has(${SHARE_ICON})`) || shareTemplate;
+        const anchor = document.querySelector(ROW_ANCHOR);
+        if (!shareTemplate || !anchor || copy?.previousElementSibling === anchor) return;
+        copy?.remove();
+        anchor.after(createRowCopy(shareTemplate));
     };
 
     // ----------------------------------------------------------------- styles
@@ -227,45 +227,10 @@
             position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
-        /* The :not(#id) parts add ID-level specificity, so page styles can't
-           outrank these !important declarations without heavier selectors. */
-        ${BUTTON} {
-            box-sizing: border-box !important; position: relative !important;
-            display: inline-flex !important; align-items: center !important; gap: 4px !important;
-            width: auto !important; min-width: 0 !important;
-            height: 22px !important; min-height: 22px !important; max-height: 22px !important;
-            margin: 8px 0 0 !important; padding: 0 8px !important; vertical-align: middle !important;
-            border: 1px solid currentColor !important; border-radius: 999px !important;
-            background: transparent none !important; box-shadow: none !important; text-shadow: none !important;
-            appearance: none !important; color: inherit !important; cursor: pointer !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-            font-size: 11px !important; font-style: normal !important; font-weight: 600 !important;
-            line-height: 1 !important; letter-spacing: normal !important; text-transform: none !important;
-            white-space: nowrap !important;
-        }
-        ${BUTTON} svg { width: 10px !important; height: 10px !important; flex-shrink: 0 !important; margin: 0 !important; }
-        ${BUTTON}[data-theme="dark"] { color: ${DARK_THEME_GREEN} !important; }
-        ${BUTTON}:hover { background-color: rgba(128, 128, 128, 0.15) !important; }
-        ${BUTTON}[data-theme="dark"]:hover { background-color: rgba(126, 231, 135, 0.15) !important; }
-        ${BUTTON}:focus-visible { outline: 2px solid currentColor !important; outline-offset: 2px !important; }
-        /* Extends the click target to 26px tall (WCAG 2.2 AA target size is 24px) without changing the look. */
-        ${BUTTON}::before { content: "" !important; position: absolute !important; inset: -2px 0 !important; }
+        /* Same spacing YouTube gives the buttons in the row. */
+        .${ROW_COPY_CLASS} { display: block !important; flex-shrink: 0 !important; margin: 0 0 0 8px !important; }
     `;
     document.head.append(style);
-
-    // -------------------------------------------------------------- theming
-
-    // Reads the first mostly-opaque background behind the button.
-    const isOnDarkBackground = (element) => {
-        for (let node = element.parentElement; node; node = node.parentElement) {
-            const match = getComputedStyle(node).backgroundColor.match(/[\d.]+/g);
-            if (!match) continue;
-            const [r, g, b, alpha = 1] = match.map(Number);
-            if (alpha < 0.5) continue;
-            return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
-        }
-        return false;
-    };
 
     // -------------------------------------------------------------- bootstrap
 
@@ -275,8 +240,11 @@
         pending = setTimeout(enhance, 150);
     };
 
-    new MutationObserver(scheduleEnhance).observe(document.documentElement, { childList: true, subtree: true });
-    // YouTube's dark theme toggles the `dark` attribute on <html>.
-    new MutationObserver(scheduleEnhance).observe(document.documentElement, { attributes: true, attributeFilter: ['dark', 'class', 'style'] });
+    // Menu text is replaced straight away, so YouTube's own wording never shows.
+    // `is-hidden` is watched so YouTube's own row Download stays unhidden.
+    new MutationObserver(() => {
+        relabelDownloadItems();
+        scheduleEnhance();
+    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['is-hidden'] });
     enhance();
 })();

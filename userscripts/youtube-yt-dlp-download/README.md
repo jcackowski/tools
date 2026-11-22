@@ -1,8 +1,8 @@
 # YouTube yt-dlp Download
 
-Adds a **Download with yt-dlp** button under YouTube videos. Clicking it downloads the video on your PC with [yt-dlp](https://github.com/yt-dlp/yt-dlp): MP4, up to 1080p, saved to `Downloads\yt-dlp`.
+Makes YouTube's own **Download** download the video on your PC with [yt-dlp](https://github.com/yt-dlp/yt-dlp): MP4, up to 1080p, saved to `Downloads\yt-dlp`. This covers Download in the ⋯ menu under a video, in a thumbnail's ⋮ menu, and the Download button in the row under a video. That row always has a Download button: YouTube's own when it has one, otherwise a copy of its Share button turned into Download.
 
-Windows only. YouTube doesn't offer full-quality downloads a browser can save directly, so the button hands the video to yt-dlp through a small helper.
+Windows only. YouTube doesn't offer full-quality downloads a browser can save directly, so the script hands the video to yt-dlp through a small helper.
 
 ## Install
 
@@ -13,7 +13,7 @@ Windows only. YouTube doesn't offer full-quality downloads a browser can save di
    It installs yt-dlp, Deno and FFmpeg with winget if they're missing, saves the helper to `%LOCALAPPDATA%\yt-dlp-handler`, and adds a `ytdlp:` link type for your Windows user (no admin needed). [Read install.ps1](install.ps1) first if you like. Run the same command again to update the helper.
 2. Install the userscript: open [youtube-yt-dlp-download.user.js](https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js) with [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) installed.
 
-The first click asks to open **yt-dlp**. You can allow it permanently for youtube.com. It also opens a one-time message: a Windows notification should follow within a few seconds, and if none does, the helper from step 1 isn't installed. The page can't detect that itself. The message comes from the shared [notifications.js](../_shared/notifications.js), which the userscript loads with `@require` from a tagged release.
+The first download asks to open **yt-dlp**. You can allow it permanently for youtube.com. Every download opens a message naming the video: a Windows notification should follow within a few seconds, and if none does, the helper from step 1 isn't installed. The page can't detect that itself. The message comes from the shared [notifications.js](../_shared/notifications.js), which the userscript loads with `@require` from a tagged release.
 
 ## Using it
 
