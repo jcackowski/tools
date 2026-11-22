@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Video Downloader
 // @namespace    reddit-video-downloader
-// @version      0.5.2
+// @version      0.5.3
 // @description  One-click download of Reddit-hosted (v.redd.it) videos, with sound, on old and new Reddit layouts.
 // @author       Jay Cackowski
 // @match        https://old.reddit.com/*
