@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Declutter
 // @namespace    github.com/jcackowski/userscripts
-// @version      0.1.0
+// @version      0.1.1
 // @description  Hides unused sidebar sections, banners and shelves on YouTube, expands the subscriptions list, and opens Shorts in the normal player.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/userscripts
@@ -81,9 +81,15 @@
         CONFIG.hideEngagementPanelScrim && '#engagement-panel-scrim',
     ].filter(Boolean);
 
-    if (HIDDEN.length) {
+    const EXTRA_CSS = [
+        // The frosted backdrop behind the top bar grows to cover the chip bar
+        // too. With the chips hidden it would cover the top of the first row.
+        CONFIG.hideFilterChips && '#frosted-glass.with-chipbar, #frosted-glass.loading-with-chipbar { height: 56px !important; }',
+    ].filter(Boolean);
+
+    if (HIDDEN.length || EXTRA_CSS.length) {
         const style = document.createElement('style');
-        style.textContent = `${HIDDEN.join(',\n')} { display: none !important; }`;
+        style.textContent = [HIDDEN.length && `${HIDDEN.join(',\n')} { display: none !important; }`, ...EXTRA_CSS].filter(Boolean).join('\n');
         const addStyle = () => (document.head || document.documentElement).appendChild(style);
         if (document.documentElement) {
             addStyle();
