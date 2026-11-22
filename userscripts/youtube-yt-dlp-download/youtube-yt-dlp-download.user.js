@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube yt-dlp Download
 // @namespace    github.com/jcackowski/tools
-// @version      0.1.3
+// @version      0.3.0
 // @description  Adds a download button under YouTube videos that hands the video to yt-dlp on your computer.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
@@ -10,6 +10,7 @@
 // @icon         https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/_shared/icon.svg
 // @match        https://www.youtube.com/*
 // @grant        none
+// @require      https://raw.githubusercontent.com/jcackowski/tools/notifications-v1.0.0/userscripts/_shared/notifications.js#sha256=b36f0c3f5c345de737fa7d1f6a6151c889c8bb81e43fac3302a194d0eff59029
 // @downloadURL  https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
 // @updateURL    https://raw.githubusercontent.com/jcackowski/tools/main/userscripts/youtube-yt-dlp-download/youtube-yt-dlp-download.user.js
 // ==/UserScript==
@@ -26,6 +27,10 @@
 
 (() => {
     'use strict';
+
+    // From _shared/notifications.js (@require). Taken now, before another
+    // script on the page can replace the global with a different version.
+    const notifications = globalThis.jcNotifications;
 
     const BUTTON_CLASS = 'yyd-download';
     const BUTTON = `button.${BUTTON_CLASS}.${BUTTON_CLASS}:not(#yyd-a):not(#yyd-b)`;
@@ -73,6 +78,39 @@
     };
     const IDLE_LABEL = 'Download with yt-dlp';
 
+    // ------------------------------------------------------- first-run notice
+
+    // The page can't tell whether the ytdlp: link reached the helper, so the
+    // first click opens a modal saying what to expect. The flag lives in
+    // youtube.com's localStorage; clearing site data shows it again. If
+    // storage is blocked, it shows once per page load.
+    const NOTICE_KEY = 'yyd-first-run-notice-shown';
+    const NOTICE_TEXT = "A Windows notification should appear within a few seconds. If none does, the yt-dlp helper isn't installed on this PC yet.";
+    const SETUP_URL = 'https://github.com/jcackowski/tools/tree/main/userscripts/youtube-yt-dlp-download#install';
+
+    let noticeTaken = false;
+    const isFirstClick = () => {
+        if (noticeTaken) return false;
+        noticeTaken = true;
+        try {
+            if (localStorage.getItem(NOTICE_KEY)) return false;
+            localStorage.setItem(NOTICE_KEY, '1');
+        } catch {
+            // Storage blocked: the in-memory flag above still limits it to once.
+        }
+        return true;
+    };
+
+    const showNotice = (button) => {
+        notifications.showModal({
+            title: 'Sent to yt-dlp',
+            message: NOTICE_TEXT,
+            link: { text: 'Install the helper', href: SETUP_URL },
+            closeLabel: 'Got it',
+            theme: button.dataset.theme,
+        });
+    };
+
     let resetTimer = null;
     const setLabel = (button, text) => {
         button.querySelector('.yyd-label').textContent = text;
@@ -95,7 +133,12 @@
             if (!video) return;
             location.href = `ytdlp:youtube/${video.id}`;
             setLabel(button, 'sent to yt-dlp');
-            announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
+            // If the @require'd library didn't load, skip the modal and keep the flag unset.
+            if (notifications && isFirstClick()) {
+                showNotice(button);
+            } else {
+                announce(`Sent ${video.title || 'this video'} to yt-dlp. Windows notifications will show its progress.`);
+            }
             clearTimeout(resetTimer);
             resetTimer = setTimeout(() => setLabel(button, IDLE_LABEL), 4000);
         });
