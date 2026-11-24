@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Amazon Xmas Export
 // @namespace    github.com/jcackowski/tools
-// @version      0.1.0
+// @version      0.2.0
 // @description  Copies chosen items from an Amazon order as rows to paste into a Christmas shopping Google Sheet.
 // @author       Jay Cackowski
 // @homepageURL  https://github.com/jcackowski/tools
@@ -21,9 +21,11 @@
  *   their parts with data-component attributes (itemTitle, unitPrice,
  *   chargeSummary), which is what the script reads.
  * - Each item gets a checkbox and an editable short name. The floating panel
- *   copies the checked items as tab-separated rows in the sheet's column
- *   order: Person, Gift, Gift Link, Price (+ Tax), Wrapped. Person and
- *   Wrapped are left blank.
+ *   takes the recipient's name (required) and copies the checked items as
+ *   tab-separated rows in the sheet's column order: Person, Gift, Gift Link,
+ *   Price (+ Tax). Rows stop there, so pasting leaves Wrapped untouched.
+ * - Names that have been copied with are kept in this browser's
+ *   localStorage and suggested in the name box.
  * - Price (+ Tax) is the unit price times (1 + the order's tax rate), where
  *   the rate is the order's tax divided by its total before tax.
  */
@@ -102,7 +104,12 @@
         .${PREFIX}-copy:hover { background: #137333; }
         .${PREFIX}-copy:disabled { background: #c4c7c5; color: #444746; cursor: default; }
         .${PREFIX}-note { margin: 0; color: #565959; }
-        .${PREFIX}-item input:focus-visible, .${PREFIX}-copy:focus-visible {
+        .${PREFIX}-person-label { font-weight: 600; }
+        .${PREFIX}-person {
+            padding: 6px 8px; border: 1px solid #888c8c; border-radius: 4px;
+            font: inherit; color: inherit; background: #fff;
+        }
+        .${PREFIX}-item input:focus-visible, .${PREFIX}-copy:focus-visible, .${PREFIX}-person:focus-visible {
             outline: 2px solid #188038; outline-offset: 2px;
         }
         @media print { .${PREFIX}-item, .${PREFIX}-panel { display: none !important; } }
@@ -119,9 +126,45 @@
     // ------------------------------------------------------------ the panel
 
     let panel = null;
+    let personInput = null;
+    let suggestions = null;
     let copyButton = null;
     let note = null;
     let status = null;
+
+    // Recently used recipient names, newest first. Storage can be blocked
+    // (private windows, cleared site data), so it's best-effort.
+    const RECIPIENTS_KEY = `${PREFIX}-recipients`;
+    const MAX_RECIPIENTS = 50;
+
+    const loadRecipients = () => {
+        try {
+            const names = JSON.parse(localStorage.getItem(RECIPIENTS_KEY) || '[]');
+            return Array.isArray(names) ? names.filter((name) => typeof name === 'string') : [];
+        } catch {
+            return [];
+        }
+    };
+
+    const rememberRecipient = (person) => {
+        const names = [person, ...loadRecipients().filter((name) => name !== person)].slice(0, MAX_RECIPIENTS);
+        try {
+            localStorage.setItem(RECIPIENTS_KEY, JSON.stringify(names));
+        } catch {
+            return;
+        }
+        fillSuggestions(names);
+    };
+
+    const fillSuggestions = (names) => {
+        suggestions.replaceChildren(...names.map((name) => {
+            const option = document.createElement('option');
+            option.value = name;
+            return option;
+        }));
+    };
+
+    const recipient = () => clean(personInput?.value ?? '');
 
     const checkedItems = () => [...document.querySelectorAll(`.${PREFIX}-item`)]
         .filter((item) => item.querySelector('input[type="checkbox"]').checked);
@@ -138,25 +181,28 @@
     const refreshPanel = () => {
         if (!panel) return;
         const count = checkedItems().length;
-        copyButton.textContent = count ? rowsLabel(count) : 'No items checked';
-        copyButton.disabled = count === 0;
+        const hasPerson = recipient() !== '';
+        copyButton.textContent = !count ? 'No items checked' : hasPerson ? rowsLabel(count) : 'Enter a name to copy';
+        copyButton.disabled = count === 0 || !hasPerson;
         note.textContent = describeTax();
     };
 
     const clean = (text) => String(text).replace(/[\t\r\n]+/g, ' ').trim();
 
-    const buildRows = () => {
+    const buildRows = (person) => {
         const rate = taxRate() ?? 0;
         return checkedItems().map((item) => {
             const unit = Number(item.dataset.unitPrice);
             const price = Number.isFinite(unit) ? `$${(Math.round(unit * (1 + rate) * 100) / 100).toFixed(2)}` : '';
             const name = item.querySelector(`.${PREFIX}-name`).value;
-            return ['', clean(name), item.dataset.link, price, ''].join('\t');
+            return [person, clean(name), item.dataset.link, price].join('\t');
         });
     };
 
     const copyRows = async () => {
-        const rows = buildRows();
+        const person = recipient();
+        if (!person) return;
+        const rows = buildRows(person);
         if (!rows.length) return;
         try {
             await navigator.clipboard.writeText(rows.join('\n'));
@@ -164,9 +210,10 @@
             status.textContent = `Couldn't copy (${error.message}). Click the page and try again.`;
             return;
         }
+        rememberRecipient(person);
         const label = rows.length === 1 ? '1 row' : `${rows.length} rows`;
         copyButton.textContent = `Copied ${label}`;
-        status.textContent = `Copied ${label} to the clipboard.`;
+        status.textContent = `Copied ${label} for ${person} to the clipboard.`;
         setTimeout(refreshPanel, 2000);
     };
 
@@ -175,6 +222,28 @@
         panel.className = `${PREFIX}-panel`;
         panel.setAttribute('role', 'region');
         panel.setAttribute('aria-label', 'Copy to Christmas sheet');
+
+        const personLabel = document.createElement('label');
+        personLabel.className = `${PREFIX}-person-label`;
+        personLabel.htmlFor = `${PREFIX}-person`;
+        personLabel.textContent = 'Gift for';
+
+        suggestions = document.createElement('datalist');
+        suggestions.id = `${PREFIX}-recipients`;
+        fillSuggestions(loadRecipients());
+
+        personInput = document.createElement('input');
+        personInput.type = 'text';
+        personInput.id = `${PREFIX}-person`;
+        personInput.className = `${PREFIX}-person`;
+        personInput.required = true;
+        personInput.autocomplete = 'off';
+        personInput.placeholder = 'Recipient name';
+        personInput.setAttribute('list', suggestions.id);
+        personInput.addEventListener('input', refreshPanel);
+        personInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !copyButton.disabled) copyRows();
+        });
 
         copyButton = document.createElement('button');
         copyButton.type = 'button';
@@ -188,7 +257,7 @@
         status.className = `${PREFIX}-note`;
         status.setAttribute('role', 'status');
 
-        panel.append(copyButton, note, status);
+        panel.append(personLabel, personInput, suggestions, copyButton, note, status);
         document.body.append(panel);
     };
 

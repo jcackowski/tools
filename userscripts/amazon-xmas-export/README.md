@@ -9,15 +9,22 @@ Open [amazon-xmas-export.user.js](https://raw.githubusercontent.com/jcackowski/t
 ## Use
 
 1. Open an order's invoice (**View invoice**) or its **View order details** page on amazon.com.
-2. Each item gets a checkbox and a short name. Uncheck anything that isn't a gift, and edit the names the way you want them in the sheet.
-3. Click **Copy N rows** in the panel at the bottom right.
-4. In the sheet, click the **Person** cell of the first empty row and paste.
+2. Each item gets a checkbox and a short name. Uncheck anything that isn't for this person, and edit the names the way you want them in the sheet.
+3. In the panel at the bottom right, type who the gifts are for in **Gift for**. Copy stays off until there's a name. Names you've used before are suggested as you type.
+4. Click **Copy N rows**, or press Enter in the name box.
+5. In the sheet, click the **Person** cell of the first empty row and paste.
+
+For an order with gifts for several people, check one person's items, copy and paste, then change the checks and the name and copy again.
 
 Each row comes in as:
 
-| Person | Gift | Gift Link | Price (+ Tax) | Wrapped |
-|---|---|---|---|---|
-| *(blank)* | Lifewit 45L Clear Clothes Storage Bags | `https://www.amazon.com/dp/B0CGTG9S1F` | $19.12 | *(blank)* |
+| Person | Gift | Gift Link | Price (+ Tax) |
+|---|---|---|---|
+| Ron Reynolds | Lifewit 45L Clear Clothes Storage Bags | `https://www.amazon.com/dp/B0CGTG9S1F` | $19.12 |
+
+Rows stop at the price, so pasting leaves the **Wrapped** column as it was.
+
+Recent names are stored in this browser's local storage for amazon.com. Clearing Amazon's site data clears them.
 
 ## How the price is worked out
 
